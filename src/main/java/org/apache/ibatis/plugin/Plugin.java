@@ -30,8 +30,11 @@ import org.apache.ibatis.reflection.ExceptionUtil;
  */
 public class Plugin implements InvocationHandler {
 
+  //被代理的目标对象
   private final Object target;
+  //拦截器
   private final Interceptor interceptor;
+  //接口需要拦截的方法
   private final Map<Class<?>, Set<Method>> signatureMap;
 
   private Plugin(Object target, Interceptor interceptor, Map<Class<?>, Set<Method>> signatureMap) {
@@ -66,6 +69,11 @@ public class Plugin implements InvocationHandler {
     }
   }
 
+  /**
+   * 扫描注解@Intercepts标记的类，将需要拦截的方法放到map
+   * @param interceptor
+   * @return
+   */
   private static Map<Class<?>, Set<Method>> getSignatureMap(Interceptor interceptor) {
     Intercepts interceptsAnnotation = interceptor.getClass().getAnnotation(Intercepts.class);
     // issue #251

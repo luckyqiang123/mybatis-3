@@ -72,6 +72,15 @@ public class SqlSessionFactoryBuilder {
     return build(inputStream, null, properties);
   }
 
+  /**
+   * 根据入参不同，调用不同方法
+   * 这个方法第一个入参是InputStream inputStream
+   * 还有另一个方法入参是Reader reader
+   * @param inputStream
+   * @param environment
+   * @param properties
+   * @return
+   */
   public SqlSessionFactory build(InputStream inputStream, String environment, Properties properties) {
     try {
       XMLConfigBuilder parser = new XMLConfigBuilder(inputStream, environment, properties);
@@ -88,6 +97,11 @@ public class SqlSessionFactoryBuilder {
     }
   }
 
+  /**
+   * 根据配置文件，生成SqlSessionFactory
+   * @param config
+   * @return
+   */
   public SqlSessionFactory build(Configuration config) {
     return new DefaultSqlSessionFactory(config);
   }

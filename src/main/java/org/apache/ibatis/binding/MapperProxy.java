@@ -45,15 +45,19 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     try {
+      //如果代理对象是一个类，则执行原有方法
       if (Object.class.equals(method.getDeclaringClass())) {
         return method.invoke(this, args);
       } else if (method.isDefault()) {
+        //默认的增强
         return invokeDefaultMethod(proxy, method, args);
       }
     } catch (Throwable t) {
       throw ExceptionUtil.unwrapThrowable(t);
     }
+    //生成一个MapperMethod对象
     final MapperMethod mapperMethod = cachedMapperMethod(method);
+    //调用其execute方法，把sqlSession和参数传递进去
     return mapperMethod.execute(sqlSession, args);
   }
 

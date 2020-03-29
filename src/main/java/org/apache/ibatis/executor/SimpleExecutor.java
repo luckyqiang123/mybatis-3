@@ -16,6 +16,7 @@
 package org.apache.ibatis.executor;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collections;
@@ -59,7 +60,13 @@ public class SimpleExecutor extends BaseExecutor {
     try {
       Configuration configuration = ms.getConfiguration();
       StatementHandler handler = configuration.newStatementHandler(wrapper, ms, parameter, rowBounds, resultHandler, boundSql);
+      //预编译Statement
       stmt = prepareStatement(handler, ms.getStatementLog());
+      /**
+       * SimpleStatementHandler:最简单的StatementHandler，处理不带参数运行的SQL
+       * PreparedStatementHandler：预处理Statement的handler，处理带参数允许的SQL
+       * CallableStatementHandler：存储过程的Statement的handler，处理存储过程SQL
+       */
       return handler.query(stmt, resultHandler);
     } finally {
       closeStatement(stmt);

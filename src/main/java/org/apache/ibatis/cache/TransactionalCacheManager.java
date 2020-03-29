@@ -22,15 +22,25 @@ import org.apache.ibatis.cache.decorators.TransactionalCache;
 
 /**
  * @author Clinton Begin
+ * 用于管理CachingExecutor使用的二级缓存对象，只定义了一个transactionalCaches字段
  */
 public class TransactionalCacheManager {
 
+  /**
+   *   二级缓存map，key和value与一级缓存map一样
+   */
   private final Map<Cache, TransactionalCache> transactionalCaches = new HashMap<>();
 
   public void clear(Cache cache) {
     getTransactionalCache(cache).clear();
   }
 
+  /**
+   * CachingExecutor调用此方法，用key查询返回value，
+   * @param cache
+   * @param key
+   * @return
+   */
   public Object getObject(Cache cache, CacheKey key) {
     return getTransactionalCache(cache).getObject(key);
   }
@@ -51,6 +61,16 @@ public class TransactionalCacheManager {
     }
   }
 
+  /**
+   * map.computeIfAbsent(K key,
+   *             Function<? super K, ? extends V> mappingFunction)
+   * key 就是我们要用来做映射的key
+   * mappingFunction 就是我们的映射函数
+   * 这个方法返回当前与key关联的值（无论是之前已经存在的，或者是刚刚计算出来的），可能为null。
+   * TransactionalCache::new, 调用TransactionalCache的构造方法
+   * @param cache
+   * @return
+   */
   private TransactionalCache getTransactionalCache(Cache cache) {
     return transactionalCaches.computeIfAbsent(cache, TransactionalCache::new);
   }

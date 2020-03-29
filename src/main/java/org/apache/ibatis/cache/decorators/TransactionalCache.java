@@ -39,9 +39,13 @@ public class TransactionalCache implements Cache {
 
   private static final Log log = LogFactory.getLog(TransactionalCache.class);
 
+  //对应的二级缓存对象
   private final Cache delegate;
+  //是否在commit时清除缓存
   private boolean clearOnCommit;
+  //需要在commit时提交到二级缓存的数据
   private final Map<Object, Object> entriesToAddOnCommit;
+  //缓存未命中的数据，事务commit时，也会放入二级缓存（key,null）
   private final Set<Object> entriesMissedInCache;
 
   public TransactionalCache(Cache delegate) {

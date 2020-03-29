@@ -20,12 +20,16 @@ import java.util.List;
 
 /**
  * @author Clinton Begin
+ * 用于guanliPooledConnection对象状态的组件，通过两个list分别管理
+ * 空闲状态的连接资源和活跃状态的连接资源
  */
 public class PoolState {
 
   protected PooledDataSource dataSource;
 
+  //空闲的连接池资源集合
   protected final List<PooledConnection> idleConnections = new ArrayList<>();
+  //活跃的连接池资源集合
   protected final List<PooledConnection> activeConnections = new ArrayList<>();
   protected long requestCount = 0;
   protected long accumulatedRequestTime = 0;

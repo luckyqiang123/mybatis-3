@@ -29,6 +29,7 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.TransactionIsolationLevel;
 import org.apache.ibatis.transaction.Transaction;
 import org.apache.ibatis.transaction.TransactionFactory;
+import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
 import org.apache.ibatis.transaction.managed.ManagedTransactionFactory;
 
 /**
@@ -42,6 +43,11 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
     this.configuration = configuration;
   }
 
+  /**
+   * 根据入参调用不同的openSession方法
+   * 入参有：ExecutorType、TransactionIsolationLevel、Connection和boolean autoCommit
+   * @return
+   */
   @Override
   public SqlSession openSession() {
     return openSessionFromDataSource(configuration.getDefaultExecutorType(), null, false);
@@ -90,9 +96,22 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
   private SqlSession openSessionFromDataSource(ExecutorType execType, TransactionIsolationLevel level, boolean autoCommit) {
     Transaction tx = null;
     try {
+      //包含获取数据库连接信息（DataSource）、事务工厂（TransactionFactory）
       final Environment environment = configuration.getEnvironment();
+      /**
+       * 提供了两种事务实现：JdbcTransactionFactory、ManagedTransactionFactory
+       * JdbcTransaction 类中封装了 DataSource 对象和 Connection 对象，依赖 JDBC Connection 控制事务的提交和回滚。
+       * ManagedTransaction 类中同样封装了 DataSource 对象和 Connection 对象，但其 commit()、rollback() 方法都是空实现。
+       *  MyBatis 加载配置文件的时候，会解析配置文件，根据 transactionManager 节点配置的内容生成相应的工厂类对象。
+       */
       final TransactionFactory transactionFactory = getTransactionFactoryFromEnvironment(environment);
       tx = transactionFactory.newTransaction(environment.getDataSource(), level, autoCommit);
+      /**
+       * ExecutorType 可以配置三种执行器
+       * SIMPLE：对应SimpleExecutor，一种常规执行器，每次执行都会创建一个statement，用完后关闭
+       * REUSE：可重用执行器，将statement存入map中，操作map中的statement而不会重复创建statement
+       * BATCH：对应BatchExecutor，批处理型执行器，doUpdate预处理存储过程或批处理操作，doQuery提交并执行过程，不会像上面两者返回执行行数
+       */
       final Executor executor = configuration.newExecutor(tx, execType);
       return new DefaultSqlSession(configuration, executor, autoCommit);
     } catch (Exception e) {

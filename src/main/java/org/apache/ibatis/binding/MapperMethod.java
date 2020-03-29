@@ -54,6 +54,12 @@ public class MapperMethod {
     this.method = new MethodSignature(config, mapperInterface, method);
   }
 
+  /**
+   * 增删改查
+   * @param sqlSession
+   * @param args
+   * @return
+   */
   public Object execute(SqlSession sqlSession, Object[] args) {
     Object result;
     switch (command.getType()) {
@@ -77,6 +83,10 @@ public class MapperMethod {
           executeWithResultHandler(sqlSession, args);
           result = null;
         } else if (method.returnsMany()) {
+          /**
+           * 根据mapper.xml中配置的returnType，如最常见的列表查询
+           * this.returnsMany = configuration.getObjectFactory().isCollection(this.returnType) || this.returnType.isArray();
+           */
           result = executeForMany(sqlSession, args);
         } else if (method.returnsMap()) {
           result = executeForMap(sqlSession, args);
@@ -141,7 +151,9 @@ public class MapperMethod {
     List<E> result;
     Object param = method.convertArgsToSqlCommandParam(args);
     if (method.hasRowBounds()) {
+      //逻辑分页，把数据全部查询到ResultSet，然后从ResultSet中取出offset和limit之间的数据，实现了分页查询
       RowBounds rowBounds = method.extractRowBounds(args);
+      //里面调用executor.query()方法
       result = sqlSession.selectList(command.getName(), param, rowBounds);
     } else {
       result = sqlSession.selectList(command.getName(), param);

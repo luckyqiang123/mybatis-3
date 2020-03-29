@@ -20,14 +20,23 @@ import java.util.Map;
 
 import org.apache.ibatis.cache.Cache;
 import org.apache.ibatis.cache.CacheException;
+import org.apache.ibatis.mapping.MappedStatement;
+import org.apache.ibatis.session.RowBounds;
 
 /**
  * @author Clinton Begin
  */
 public class PerpetualCache implements Cache {
 
+  // 对象id，如LocalCache
   private final String id;
 
+  /**
+   * 缓存map
+   * key为(MappedStatement ms, Object parameter, RowBounds rowBounds, BoundSql boundSql)生成
+   * value为数据库查询出的结果集List<E>
+   *
+   */
   private Map<Object, Object> cache = new HashMap<>();
 
   public PerpetualCache(String id) {

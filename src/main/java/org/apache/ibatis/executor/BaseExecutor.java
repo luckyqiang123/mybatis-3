@@ -113,6 +113,7 @@ public abstract class BaseExecutor implements Executor {
     if (closed) {
       throw new ExecutorException("Executor was closed.");
     }
+    //update|insert|delete 方法首先会清除一级缓存
     clearLocalCache();
     return doUpdate(ms, parameter);
   }
@@ -132,6 +133,7 @@ public abstract class BaseExecutor implements Executor {
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler) throws SQLException {
     BoundSql boundSql = ms.getBoundSql(parameter);
+    //缓存的key
     CacheKey key = createCacheKey(ms, parameter, rowBounds, boundSql);
     return query(ms, parameter, rowBounds, resultHandler, key, boundSql);
   }
@@ -143,27 +145,32 @@ public abstract class BaseExecutor implements Executor {
     if (closed) {
       throw new ExecutorException("Executor was closed.");
     }
+    //查询的时候一般清除一级缓存，但是可以通过 xml配置或者注解强制清除，queryStack == 0 是为了防止递归调用
     if (queryStack == 0 && ms.isFlushCacheRequired()) {
       clearLocalCache();
     }
     List<E> list;
     try {
       queryStack++;
+      //从一级缓存中查询
       list = resultHandler == null ? (List<E>) localCache.getObject(key) : null;
       if (list != null) {
         handleLocallyCachedOutputParameters(ms, key, parameter, boundSql);
       } else {
+        //一级缓存中没有，查数据库
         list = queryFromDatabase(ms, parameter, rowBounds, resultHandler, key, boundSql);
       }
     } finally {
       queryStack--;
     }
     if (queryStack == 0) {
+      //延迟加载队列
       for (DeferredLoad deferredLoad : deferredLoads) {
         deferredLoad.load();
       }
       // issue #601
       deferredLoads.clear();
+      // 一级缓存本身不能关闭，但是可以设置作用范围 STATEMENT，每次都清除缓存
       if (configuration.getLocalCacheScope() == LocalCacheScope.STATEMENT) {
         // issue #482
         clearLocalCache();
@@ -273,6 +280,7 @@ public abstract class BaseExecutor implements Executor {
   protected abstract List<BatchResult> doFlushStatements(boolean isRollback)
       throws SQLException;
 
+  //query-->queryFromDatabase-->doQuery
   protected abstract <E> List<E> doQuery(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql)
       throws SQLException;
 
@@ -321,10 +329,12 @@ public abstract class BaseExecutor implements Executor {
     List<E> list;
     localCache.putObject(key, EXECUTION_PLACEHOLDER);
     try {
+      //调用simple、reuse、batch、close四种执行器重写的方法
       list = doQuery(ms, parameter, rowBounds, resultHandler, boundSql);
     } finally {
       localCache.removeObject(key);
     }
+    //查询结果放入一级缓存
     localCache.putObject(key, list);
     if (ms.getStatementType() == StatementType.CALLABLE) {
       localOutputParameterCache.putObject(key, parameter);

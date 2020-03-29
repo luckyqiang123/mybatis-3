@@ -598,6 +598,12 @@ public class Configuration {
     return newExecutor(transaction, defaultExecutorType);
   }
 
+  /**
+   * CachingExecutor 二级缓存执行器，装饰类
+   * @param transaction
+   * @param executorType
+   * @return
+   */
   public Executor newExecutor(Transaction transaction, ExecutorType executorType) {
     executorType = executorType == null ? defaultExecutorType : executorType;
     executorType = executorType == null ? ExecutorType.SIMPLE : executorType;
@@ -609,9 +615,11 @@ public class Configuration {
     } else {
       executor = new SimpleExecutor(this, transaction);
     }
+    //如果开了二级缓存，再装饰原先的executor
     if (cacheEnabled) {
       executor = new CachingExecutor(executor);
     }
+    //将执行器executor添加到拦截器中
     executor = (Executor) interceptorChain.pluginAll(executor);
     return executor;
   }
